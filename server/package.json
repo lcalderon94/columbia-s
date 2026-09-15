@@ -9,9 +9,10 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:push": "prisma db push --skip-generate && prisma generate",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:push": "node scripts/preparar-env.mjs && prisma db push --skip-generate && prisma generate",
+    "db:seed": "node scripts/preparar-env.mjs && tsx prisma/seed.ts",
+    "db:studio": "prisma studio",
+    "env:init": "node scripts/preparar-env.mjs"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "Columbia's - Sistema de gestion para board game cafe (TPV, sala, cocina, caja)",
-  "workspaces": ["server", "client"],
+  "workspaces": [
+    "server",
+    "client"
+  ],
   "scripts": {
     "dev": "npm-run-all --parallel dev:server dev:client",
     "dev:server": "npm run dev --workspace server",
@@ -13,10 +16,12 @@
     "test": "npm run test --workspace server",
     "db:push": "npm run db:push --workspace server",
     "db:seed": "npm run db:seed --workspace server",
-    "setup": "npm install && npm run db:push && npm run db:seed"
+    "setup": "npm install && npm run db:push --workspace server && npm run db:seed --workspace server"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }
