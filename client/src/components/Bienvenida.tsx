@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { useSesion } from '../lib/sesion';
+import { usePracticas } from '../lib/practicas';
+import { hayGuiaActiva } from '../lib/tour';
 import { Modal } from './ui';
 
 interface Progreso {
@@ -21,6 +23,7 @@ const CLAVE_POSPUESTO = 'columbias-bienvenida-pospuesta';
  */
 export default function Bienvenida() {
   const usuario = useSesion((s) => s.usuario);
+  const enPracticas = usePracticas((s) => s.activo);
   const navegar = useNavigate();
   const [visible, setVisible] = useState(false);
 
@@ -33,15 +36,18 @@ export default function Bienvenida() {
   useEffect(() => {
     if (!data || !usuario) return;
     if (data.listo) return;
-    const pospuesta = sessionStorage.getItem(`${CLAVE_POSPUESTO}-${usuario.id}`);
-    if (pospuesta) return;
-    setVisible(true);
-  }, [data, usuario]);
+    // Nunca encima de una guía en marcha ni durante las prácticas: taparía
+    // justo lo que el empleado tiene que estar mirando.
+    if (hayGuiaActiva() || enPracticas) return;
+    if (sessionStorage.getItem(`${CLAVE_POSPUESTO}-${usuario.id}`)) return;
 
-  const apartar = () => {
-    if (usuario) sessionStorage.setItem(`${CLAVE_POSPUESTO}-${usuario.id}`, '1');
-    setVisible(false);
-  };
+    // Se marca al enseñarlo, no al cerrarlo: si no, volvía a salir en cada
+    // cambio de pantalla y dejaba la aplicación bloqueada.
+    sessionStorage.setItem(`${CLAVE_POSPUESTO}-${usuario.id}`, '1');
+    setVisible(true);
+  }, [data, usuario, enPracticas]);
+
+  const apartar = () => setVisible(false);
 
   if (!data) return null;
 

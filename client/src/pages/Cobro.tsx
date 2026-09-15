@@ -204,6 +204,8 @@ export default function Cobro() {
               {METODOS.map((m) => (
                 <button
                   key={m}
+                  data-guia={`cobro-metodo-${m.toLowerCase()}`}
+                  data-elegido={m === metodo ? 'si' : 'no'}
                   onClick={() => setMetodo(m)}
                   className={`rounded-lg py-3 text-sm font-semibold transition ${
                     m === metodo ? 'bg-marca-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -233,6 +235,7 @@ export default function Cobro() {
                     <div>
                       <label className="etiqueta">Entregado</label>
                       <input
+                        data-guia="cobro-entregado"
                         className="campo tabular"
                         value={entregado}
                         onChange={(e) => setEntregado(e.target.value)}
@@ -252,7 +255,7 @@ export default function Cobro() {
                       ))}
                     </div>
                     {cambioCent > 0 && (
-                      <div className="rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
+                      <div data-guia="cobro-cambio" className="rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-200">
                         <span className="text-sm text-emerald-800">Cambio a devolver </span>
                         <span className="tabular text-lg font-bold text-emerald-900">
                           {eur(cambioCent)}
@@ -510,7 +513,7 @@ export default function Cobro() {
           </>
         }
       >
-        <div className="py-4 text-center">
+        <div data-guia="cobro-hecho" className="py-4 text-center">
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
             <svg className="h-8 w-8 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 6 9 17l-5-5" />

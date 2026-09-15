@@ -60,6 +60,19 @@ async function resumenSesion(sesionId: string, tx: Tx = prisma) {
   });
   const ventaTotalCent = sesion.pagos.reduce((a, p) => a + p.importeCent, 0);
 
+  // Lo que impide cerrar la caja. Se devuelve con su mesa e importe para que
+  // la pantalla pueda llevar al camarero directo a cobrarlos, en vez de
+  // dejarle con un aviso sin saber cuál es ni dónde está.
+  const pendientes = await tx.pedido.findMany({
+    where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] }, esPractica: false },
+    orderBy: { abiertoEn: 'asc' },
+    include: {
+      mesa: { select: { nombre: true } },
+      camarero: { select: { nombre: true } },
+      lineas: { where: { estado: { not: 'ANULADO' } } },
+    },
+  });
+
   return {
     id: sesion.id,
     numero: sesion.numero,
@@ -83,6 +96,18 @@ async function resumenSesion(sesionId: string, tx: Tx = prisma) {
       pedidosCobrados,
       ticketMedioCent: pedidosCobrados ? Math.round(ventaTotalCent / pedidosCobrados) : 0,
     },
+    pedidosPendientes: pendientes.map((p) => ({
+      id: p.id,
+      numero: p.numero,
+      mesa: p.mesa?.nombre ?? p.tipo,
+      camarero: p.camarero?.nombre ?? null,
+      abiertoEn: p.abiertoEn,
+      lineas: p.lineas.length,
+      totalCent: p.lineas.reduce(
+        (a, l) => (l.invitada ? a : a + (l.precioUnitCent + l.modificadorCent) * l.cantidad),
+        0,
+      ),
+    })),
     porMetodo: [...porMetodo.entries()].map(([metodo, v]) => ({ metodo, ...v })),
     movimientos: sesion.movimientos.map((m) => ({
       id: m.id,
@@ -202,11 +227,17 @@ export default async function rutasCaja(app: FastifyInstance) {
     if (!sesion) throw conflicto('No hay ninguna caja abierta');
 
     // Los pedidos de formación no cuentan: no llevan dinero real dentro.
-    const abiertos = await prisma.pedido.count({
+    const abiertos = await prisma.pedido.findMany({
       where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] }, esPractica: false },
+      include: { mesa: { select: { nombre: true } } },
     });
-    if (abiertos > 0) {
-      throw conflicto(`Quedan ${abiertos} pedidos sin cobrar: ciérralos antes de cerrar caja`);
+    if (abiertos.length > 0) {
+      const donde = abiertos
+        .map((p) => (p.mesa ? `mesa ${p.mesa.nombre}` : `pedido #${p.numero}`))
+        .join(', ');
+      throw conflicto(
+        `Queda dinero sin cobrar en ${donde}. Cóbralo o anúlalo antes de cerrar la caja.`,
+      );
     }
 
     const contadoCent =

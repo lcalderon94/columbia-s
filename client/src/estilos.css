@@ -99,3 +99,34 @@
 .driver-popover.guia-columbias .driver-popover-arrow {
   border-color: white;
 }
+
+/* Tarea obligatoria dentro de una guía: tiene que cantar, porque es lo que
+   bloquea el avance hasta que el empleado lo hace. */
+.driver-popover.guia-columbias .guia-tarea {
+  @apply mt-3 flex items-start gap-2 rounded-lg bg-marca-50 px-3 py-2 text-sm text-marca-900
+         ring-1 ring-inset ring-marca-200;
+}
+.driver-popover.guia-columbias .guia-tarea-punto {
+  @apply mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-marca-500;
+  animation: guia-latido 1.4s ease-in-out infinite;
+}
+@keyframes guia-latido {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+.driver-popover.guia-columbias .guia-tarea em {
+  @apply not-italic font-medium;
+}
+
+/* Durante una guía, driver.js deja sin clics todo lo que no sea el elemento
+   resaltado. Los diálogos del programa (modificadores, cover, arqueo...) se
+   abren precisamente desde esos elementos, así que hay que devolverles el
+   clic y ponerlos por encima del velo: si no, el empleado ve el diálogo
+   apagado y no puede pulsar nada. */
+.driver-active .modal-columbias,
+.driver-active .modal-columbias * {
+  pointer-events: auto;
+}
+.driver-active .modal-columbias {
+  z-index: 999999998;
+}

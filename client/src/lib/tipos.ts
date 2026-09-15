@@ -273,6 +273,16 @@ export interface SesionCaja {
     pedidosCobrados: number;
     ticketMedioCent: number;
   };
+  /** Pedidos sin cobrar que impiden cerrar la caja. */
+  pedidosPendientes: {
+    id: string;
+    numero: number;
+    mesa: string;
+    camarero: string | null;
+    abiertoEn: string;
+    lineas: number;
+    totalCent: number;
+  }[];
   porMetodo: { metodo: string; importeCent: number; propinaCent: number; num: number }[];
   movimientos: {
     id: string;

@@ -66,7 +66,7 @@ export default function Formacion() {
         // Las guías de comanda y cobro se practican sobre un pedido real
         // marcado como formación, que luego se borra.
         practicas.activar();
-        const pedidoId = await pedidoDePracticas();
+        const pedidoId = await pedidoDePracticas(guia.pedidoConLineas, guia.pedidoVacio);
         navegar(guia.id === 'cobro' ? `/cobro/${pedidoId}` : `/pedido/${pedidoId}`);
         setTimeout(() => lanzar(guiaId, pedidoId), 900);
         return;
@@ -179,7 +179,11 @@ export default function Formacion() {
           <p className="mt-1 text-sm text-slate-600">
             Cuenta un cajón de mentira y mira cómo sale el descuadre. No toca la caja de verdad.
           </p>
-          <button className="boton-secundario mt-3" onClick={() => setSimulador(true)}>
+          <button
+            data-guia="sim-abrir"
+            className="boton-secundario mt-3"
+            onClick={() => setSimulador(true)}
+          >
             Abrir simulador de arqueo
           </button>
         </div>
@@ -274,25 +278,62 @@ function Seccion({
   );
 }
 
-/** Abre (o reutiliza) un pedido de prácticas sobre la primera mesa libre. */
-async function pedidoDePracticas(): Promise<string> {
+/**
+ * Abre (o reutiliza) un pedido de prácticas sobre la primera mesa libre.
+ *
+ * La guía de cobro necesita que ya haya algo que cobrar, así que en ese caso
+ * se le ponen un par de líneas: si no, el empleado llegaría a la pantalla de
+ * cobro con la cuenta a cero y sin nada que aprender.
+ */
+async function pedidoDePracticas(conLineas = false, exigirVacio = false): Promise<string> {
   const abiertos = await api.get<{ pedidos: { id: string; estado: string }[] }>(
     '/formacion/practicas',
   );
-  const vivo = abiertos.pedidos.find((p) => p.estado === 'ABIERTO' || p.estado === 'PARA_COBRAR');
-  if (vivo) return vivo.id;
+  // Un pedido vacío se puede reaprovechar; uno con líneas no, porque dejaría
+  // las tareas de la guía ya cumplidas de partida.
+  let vivo = abiertos.pedidos.find((p) => p.estado === 'ABIERTO' || p.estado === 'PARA_COBRAR');
+  if (vivo && exigirVacio) {
+    const actual = await api.get<{ lineas: unknown[] }>(`/pedidos/${vivo.id}`);
+    if (actual.lineas.length > 0) vivo = undefined;
+  }
 
-  const sala = await api.get<{ zonas: { mesas: { id: string; estado: string }[] }[] }>('/sala');
-  const libre = sala.zonas.flatMap((z) => z.mesas).find((m) => m.estado === 'LIBRE');
-  if (!libre) throw new ErrorApi(409, 'No hay ninguna mesa libre para practicar');
+  let pedidoId: string;
+  if (vivo) {
+    pedidoId = vivo.id;
+  } else {
+    const sala = await api.get<{ zonas: { mesas: { id: string; estado: string }[] }[] }>('/sala');
+    const libre = sala.zonas.flatMap((z) => z.mesas).find((m) => m.estado === 'LIBRE');
+    if (!libre) throw new ErrorApi(409, 'No hay ninguna mesa libre para practicar');
 
-  const pedido = await api.post<{ id: string }>('/pedidos', {
-    tipo: 'MESA',
-    mesaId: libre.id,
-    comensales: 2,
-    esPractica: true,
-  });
-  return pedido.id;
+    const pedido = await api.post<{ id: string }>('/pedidos', {
+      tipo: 'MESA',
+      mesaId: libre.id,
+      comensales: 2,
+      esPractica: true,
+    });
+    pedidoId = pedido.id;
+  }
+
+  if (conLineas) {
+    const actual = await api.get<{ totales: { totalCent: number } }>(`/pedidos/${pedidoId}`);
+    if (actual.totales.totalCent === 0) {
+      const carta = await api.get<
+        { nombre: string; productos: { id: string; nombre: string }[] }[]
+      >('/carta');
+      const todos = carta.flatMap((c) => c.productos);
+      const burger = todos.find((x) => x.nombre.includes('Classic'));
+      const cana = todos.find((x) => x.nombre === 'Caña');
+      const lineas = [
+        burger && { productoId: burger.id, cantidad: 2 },
+        cana && { productoId: cana.id, cantidad: 2 },
+      ].filter(Boolean);
+      if (lineas.length) {
+        await api.post(`/pedidos/${pedidoId}/lineas`, { lineas });
+      }
+    }
+  }
+
+  return pedidoId;
 }
 
 const DENOMINACIONES = [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1];
@@ -343,7 +384,7 @@ function SimuladorArqueo({ abierto, onCerrar }: { abierto: boolean; onCerrar: ()
           />
         </div>
 
-        <div>
+        <div data-guia="sim-contar">
           <label className="etiqueta">Cuenta el cajón</label>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
             {DENOMINACIONES.map((d) => (
@@ -364,7 +405,7 @@ function SimuladorArqueo({ abierto, onCerrar }: { abierto: boolean; onCerrar: ()
           </div>
         </div>
 
-        <div className="rounded-lg bg-slate-50 p-3">
+        <div data-guia="sim-resultado" className="rounded-lg bg-slate-50 p-3">
           <div className="flex justify-between text-sm">
             <span className="text-slate-600">Debería haber</span>
             <span className="tabular font-semibold">{eur(teoricoCent)}</span>

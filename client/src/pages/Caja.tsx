@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ErrorApi } from '../lib/api';
 import { useCanal } from '../lib/socket';
@@ -11,6 +12,7 @@ const DENOMINACIONES = [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100, 50
 
 export default function Caja() {
   const qc = useQueryClient();
+  const navegar = useNavigate();
   const puede = useSesion((s) => s.puede);
   const [dialogo, setDialogo] = useState<null | 'abrir' | 'cerrar' | 'movimiento'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +76,12 @@ export default function Caja() {
                     <button
                       data-guia="caja-cerrar"
                       className="boton-primario"
+                      disabled={caja.pedidosPendientes.length > 0}
+                      title={
+                        caja.pedidosPendientes.length > 0
+                          ? 'Primero hay que cobrar los pedidos que quedan abiertos'
+                          : undefined
+                      }
                       onClick={() => setDialogo('cerrar')}
                     >
                       Cerrar caja (Z)
@@ -89,6 +97,52 @@ export default function Caja() {
                 <Dato titulo="Propinas" valor={eur(caja.totales.propinaTotalCent)} />
               </div>
             </div>
+
+            {caja.pedidosPendientes.length > 0 && (
+              <div className="tarjeta border-l-4 border-amber-500 p-4">
+                <h2 className="font-bold text-slate-900">
+                  Falta cobrar {caja.pedidosPendientes.length} pedido
+                  {caja.pedidosPendientes.length > 1 ? 's' : ''}
+                </h2>
+                <p className="mb-3 text-sm text-slate-600">
+                  La caja no se puede cerrar con dinero pendiente. Cobra o anula estos:
+                </p>
+                <ul className="divide-y divide-slate-100">
+                  {caja.pedidosPendientes.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center gap-3 py-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900">
+                          {p.mesa}
+                          <span className="ml-2 text-sm font-normal text-slate-500">
+                            Pedido #{p.numero}
+                          </span>
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {p.lineas} línea{p.lineas === 1 ? '' : 's'} · abierto{' '}
+                          {fechaHora(p.abiertoEn)}
+                          {p.camarero && ` · ${p.camarero}`}
+                        </p>
+                      </div>
+                      <span className="tabular font-bold text-slate-900">{eur(p.totalCent)}</span>
+                      <button
+                        className="boton-secundario px-3 py-1.5 text-xs"
+                        onClick={() => navegar(`/pedido/${p.id}`)}
+                      >
+                        Ver pedido
+                      </button>
+                      {puede('cobro.realizar') && p.lineas > 0 && (
+                        <button
+                          className="boton-primario px-3 py-1.5 text-xs"
+                          onClick={() => navegar(`/cobro/${p.id}`)}
+                        >
+                          Cobrar
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div data-guia="caja-efectivo" className="tarjeta p-4">

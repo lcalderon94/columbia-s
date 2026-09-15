@@ -1,7 +1,12 @@
 # Formación de empleados
 
-Guías que se ejecutan **encima del programa real**, señalando cada botón. Un
-empleado nuevo las hace en unos veinte minutos y puede empezar el turno.
+Guías que se ejecutan **encima del programa real** y que **no avanzan hasta que
+el empleado hace de verdad lo que se le pide**. Un empleado nuevo las hace en
+unos veinte minutos y puede empezar el turno.
+
+No son una presentación: en los pasos con tarea **no hay botón de «Siguiente»**.
+La guía vigila la pantalla y sigue sola cuando detecta que está hecho. Escribir
+otra cosa, o esperar, no sirve de nada.
 
 Están en **Formación**, en el menú. Quien entra por primera vez recibe además un
 aviso ofreciéndoselas.
@@ -26,7 +31,21 @@ El progreso se guarda **por empleado en el servidor**, así que le sigue aunque
 cambie de puesto o de tablet. Cada uno ve el suyo.
 
 Se sale de una guía con `Esc` en cualquier momento. Solo cuenta como completada
-si se llega al último paso y se pulsa **Terminar**.
+si se llega al último paso. Un clic fuera no la cierra: en los pasos con tarea
+es fácil fallar el objetivo y sería muy molesto perder el avance por eso.
+
+### Ejemplos de tareas obligatorias
+
+| Guía | Lo que hay que hacer de verdad |
+|---|---|
+| Comanda | Escribir «caña» en el buscador · añadirla · vaciar el buscador · añadir una hamburguesa con su punto y su pan · ponerle una nota a una línea · cargar el cover · enviar la comanda |
+| Cobro | Elegir Efectivo · escribir lo que entrega el cliente · pulsar Cobrar |
+| Abrir caja | Pulsar Abrir caja |
+| Cerrar caja | Abrir el simulador · contar el cajón · **dejar el descuadre en 0,00 €** |
+
+La guía de **cerrar caja** nunca cierra la caja de verdad: se practica en el
+simulador de arqueo, que da el mismo resultado sin riesgo. Cerrar la caja real
+es una acción con consecuencias y no es algo que se ensaye.
 
 ## Modo prácticas
 
