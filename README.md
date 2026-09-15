@@ -22,7 +22,30 @@ al lado para cobrar con tarjeta.
 
 ## Puesta en marcha
 
-Hace falta **Node.js 20 o superior**. Nada más: la base de datos es un fichero.
+Hace falta **Node.js 20 o superior** ([nodejs.org](https://nodejs.org), versión
+LTS). Nada más: la base de datos es un fichero.
+
+### En el PC del local (Windows)
+
+Hay tres archivos para doble clic, sin tocar la consola:
+
+| Archivo | Cuándo |
+|---|---|
+| `INSTALAR.bat` | Una sola vez, al montar el equipo. |
+| `ARRANCAR.bat` | Al empezar el turno. Abre la aplicación en el navegador solo. |
+| `COPIA-SEGURIDAD.bat` | Al cerrar el local. Guarda base de datos y recibos en `copias\<fecha>`. |
+
+Para que arranque solo al encender el PC: `Win + R`, escribe `shell:startup` y
+deja ahí un acceso directo a `ARRANCAR.bat`.
+
+> **Si usas PowerShell** y ves *«la ejecución de scripts está deshabilitada en
+> este sistema»*, es una restricción de Windows con los scripts `.ps1`, no del
+> proyecto. Escribe `npm.cmd` en vez de `npm` (`npm.cmd run setup`), o usa los
+> `.bat` de arriba, que ya lo hacen. También puedes permitirlo de forma
+> permanente para tu usuario con
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
+### Desde la consola (cualquier sistema)
 
 ```bash
 npm run setup     # instala, crea la base de datos y carga la carta

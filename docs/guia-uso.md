@@ -10,6 +10,14 @@
 
 ## Cada día
 
+### Encender el programa
+
+Doble clic en **`ARRANCAR.bat`**. Se abre una ventana negra y, a los pocos
+segundos, la aplicación en el navegador.
+
+**No cierres la ventana negra** mientras el local esté abierto: es el programa.
+Si la cierras, el sistema se apaga y nadie puede cobrar.
+
 ### Abrir caja
 
 **Caja → Abrir caja** e indica el fondo que dejas para cambios. Sin caja abierta
@@ -100,9 +108,16 @@ No deja cerrar si quedan pedidos sin cobrar: primero se cobran o se anulan.
 
 ## Copias de seguridad
 
-Copia cada día estos dos elementos:
+Al cerrar el local, doble clic en **`COPIA-SEGURIDAD.bat`**. Guarda en
+`copias\<fecha>` la base de datos y todos los recibos emitidos.
 
-- `server/prisma/columbias.db`
-- la carpeta `server/datos/recibos/`
+**Esa carpeta hay que sacarla del PC**: a un disco externo, a un pendrive o a la
+nube. Una copia que vive en el mismo ordenador no sirve de nada si ese ordenador
+se estropea o lo roban.
+
+Si prefieres hacerlo a mano, lo que hay que copiar es:
+
+- `server/prisma/columbias.db` — toda la información del local
+- la carpeta `server/datos/recibos/` — los recibos emitidos
 
 Con eso se reconstruye el local entero.

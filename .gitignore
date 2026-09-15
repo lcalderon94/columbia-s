@@ -12,3 +12,4 @@ client/.vite/
 .DS_Store
 coverage/
 *.tsbuildinfo
+copias/
