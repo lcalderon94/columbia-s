@@ -122,7 +122,7 @@ export default function Pedido() {
               Limpiar
             </button>
           )}
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap justify-end gap-2">
             <button className="boton-secundario" onClick={() => setDialogo('cover')} disabled={cerrado}>
               🎲 Cover
             </button>
@@ -136,7 +136,7 @@ export default function Pedido() {
         </div>
 
         {!resultados && (
-          <div className="flex gap-1.5 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2">
+          <div className="flex flex-wrap gap-1.5 border-b border-slate-200 bg-white px-3 py-2">
             {categorias.map((c) => (
               <button
                 key={c.id}
@@ -178,7 +178,7 @@ export default function Pedido() {
             </div>
             <Chip estado={pedido.estado} />
           </div>
-          <div className="mt-2 flex gap-1.5">
+          <div className="mt-2 flex flex-wrap gap-1.5">
             <button className="boton-suave px-2 py-1 text-xs" onClick={() => navegar('/sala')}>
               ← Sala
             </button>
