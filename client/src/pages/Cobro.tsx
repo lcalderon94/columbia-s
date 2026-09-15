@@ -49,6 +49,7 @@ export default function Cobro() {
       void qc.invalidateQueries({ queryKey: ['hoy'] });
       void qc.invalidateQueries({ queryKey: ['caja'] });
       if (r.factura) setResultado({ codigo: r.factura.codigo, facturaId: r.factura.id });
+      else if (r.esPractica) setResultado({ codigo: 'PRÁCTICAS · sin validez', facturaId: '' });
       else navegar('/sala');
     },
     onError: (e) => setError(e instanceof ErrorApi ? e.message : 'No se pudo cobrar'),
@@ -120,7 +121,7 @@ export default function Cobro() {
   return (
     <div className="flex h-full">
       {/* -- Resumen de la cuenta -------------------------------------- */}
-      <div className="flex w-[360px] shrink-0 flex-col border-r border-slate-200 bg-white">
+      <div data-guia="cobro-cuenta" className="flex w-[360px] shrink-0 flex-col border-r border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-4 py-3">
           <p className="text-lg font-bold text-slate-900">
             {pedido.mesa ? `Mesa ${pedido.mesa.nombre}` : pedido.tipo}
@@ -146,7 +147,7 @@ export default function Cobro() {
               ))}
           </ul>
         </div>
-        <div className="space-y-1 border-t border-slate-200 px-4 py-3 text-sm">
+        <div data-guia="cobro-total" className="space-y-1 border-t border-slate-200 px-4 py-3 text-sm">
           {pedido.totales.descuentoTotalCent > 0 && (
             <div className="flex justify-between text-amber-700">
               <span>Descuento</span>
@@ -184,6 +185,13 @@ export default function Cobro() {
             </button>
           </div>
 
+          {pedido.esPractica && (
+            <Aviso tono="info">
+              <strong>Pedido de prácticas.</strong> Puedes cobrarlo igual que uno real, pero no se
+              cobra dinero, no se emite factura y no entra en la caja.
+            </Aviso>
+          )}
+
           {error && <Aviso>{error}</Aviso>}
 
           <div className="tarjeta p-4">
@@ -192,7 +200,7 @@ export default function Cobro() {
               <span className="tabular text-2xl font-bold text-marca-700">{eur(restante)}</span>
             </div>
 
-            <div className="mb-3 grid grid-cols-4 gap-2">
+            <div data-guia="cobro-metodos" className="mb-3 grid grid-cols-4 gap-2">
               {METODOS.map((m) => (
                 <button
                   key={m}
@@ -211,6 +219,7 @@ export default function Cobro() {
                 <div>
                   <label className="etiqueta">Importe (vacío = todo lo pendiente)</label>
                   <input
+                    data-guia="cobro-importe"
                     className="campo tabular text-lg"
                     value={importe}
                     onChange={(e) => setImporte(e.target.value)}
@@ -301,7 +310,11 @@ export default function Cobro() {
                   onBorrar={() => setImporte((v) => v.slice(0, -1))}
                   onLimpiar={() => setImporte('')}
                 />
-                <button className="boton-secundario mt-2 w-full" onClick={() => setDividir(2)}>
+                <button
+                  data-guia="cobro-dividir"
+                  className="boton-secundario mt-2 w-full"
+                  onClick={() => setDividir(2)}
+                >
                   Dividir a partes iguales
                 </button>
               </div>
@@ -335,6 +348,7 @@ export default function Cobro() {
 
             <div className="mt-3 flex gap-2">
               <button
+                data-guia="cobro-parcial"
                 className="boton-secundario flex-1"
                 disabled={restante <= 0}
                 onClick={anadirPago}
@@ -342,6 +356,7 @@ export default function Cobro() {
                 Añadir cobro parcial
               </button>
               <button
+                data-guia="cobro-boton"
                 className="boton-primario flex-1"
                 disabled={cobrar.isPending || pendienteTotal <= 0}
                 onClick={finalizar}
@@ -351,7 +366,7 @@ export default function Cobro() {
             </div>
           </div>
 
-          <div className="tarjeta p-4">
+          <div data-guia="cobro-factura" className="tarjeta p-4">
             <label className="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
@@ -484,9 +499,13 @@ export default function Cobro() {
             </button>
             <button
               className="boton-primario"
-              onClick={() => resultado && void imprimirRecibo(resultado.facturaId)}
+              onClick={() =>
+                pedido.esPractica
+                  ? window.open(`/api/cobros/pedido/${id}/recibo-practica`, '_blank')
+                  : resultado && void imprimirRecibo(resultado.facturaId)
+              }
             >
-              Imprimir recibo
+              Ver el recibo
             </button>
           </>
         }
@@ -497,8 +516,12 @@ export default function Cobro() {
               <path d="M20 6 9 17l-5-5" />
             </svg>
           </div>
-          <p className="text-lg font-bold text-slate-900">{eur(pedido.totales.totalCent)} cobrados</p>
-          <p className="mt-1 text-sm text-slate-500">Factura {resultado?.codigo}</p>
+          <p className="text-lg font-bold text-slate-900">
+            {eur(pedido.totales.totalCent)} {pedido.esPractica ? 'de prácticas' : 'cobrados'}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            {pedido.esPractica ? 'Sin factura: esto era un ensayo' : `Factura ${resultado?.codigo}`}
+          </p>
         </div>
       </Modal>
     </div>

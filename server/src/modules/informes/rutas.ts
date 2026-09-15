@@ -27,11 +27,13 @@ export default async function rutasInformes(app: FastifyInstance) {
     const [pagos, pedidosAbiertos, pedidosCobrados, reservasHoy, ticketsPendientes, juegosFuera] =
       await Promise.all([
         prisma.pago.findMany({
-          where: { estado: 'COMPLETADO', creadoEn: { gte: desde, lte: hasta } },
+          where: { estado: 'COMPLETADO', esPractica: false, creadoEn: { gte: desde, lte: hasta } },
         }),
-        prisma.pedido.count({ where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] } } }),
         prisma.pedido.count({
-          where: { estado: 'COBRADO', cerradoEn: { gte: desde, lte: hasta } },
+          where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] }, esPractica: false },
+        }),
+        prisma.pedido.count({
+          where: { estado: 'COBRADO', esPractica: false, cerradoEn: { gte: desde, lte: hasta } },
         }),
         prisma.reserva.count({
           where: { fecha: { gte: desde, lte: hasta }, estado: { in: ['CONFIRMADA', 'PENDIENTE'] } },
@@ -68,7 +70,7 @@ export default async function rutasInformes(app: FastifyInstance) {
   app.get('/ventas', { preHandler: requierePermiso('informes.ver') }, async (req) => {
     const q = rango(query(req, zRango));
     const pagos = await prisma.pago.findMany({
-      where: { estado: 'COMPLETADO', creadoEn: { gte: q.desde, lte: q.hasta } },
+      where: { estado: 'COMPLETADO', esPractica: false, creadoEn: { gte: q.desde, lte: q.hasta } },
       select: { importeCent: true, propinaCent: true, metodo: true, creadoEn: true, pedidoId: true },
     });
 
@@ -116,7 +118,7 @@ export default async function rutasInformes(app: FastifyInstance) {
     const lineas = await prisma.lineaPedido.findMany({
       where: {
         estado: { not: 'ANULADO' },
-        pedido: { estado: 'COBRADO', cerradoEn: { gte: q.desde, lte: q.hasta } },
+        pedido: { estado: 'COBRADO', esPractica: false, cerradoEn: { gte: q.desde, lte: q.hasta } },
       },
       include: { producto: { select: { categoria: { select: { nombre: true } } } } },
     });
@@ -160,7 +162,7 @@ export default async function rutasInformes(app: FastifyInstance) {
   app.get('/camareros', { preHandler: requierePermiso('informes.ver') }, async (req) => {
     const q = rango(query(req, zRango));
     const pedidos = await prisma.pedido.findMany({
-      where: { estado: 'COBRADO', cerradoEn: { gte: q.desde, lte: q.hasta } },
+      where: { estado: 'COBRADO', esPractica: false, cerradoEn: { gte: q.desde, lte: q.hasta } },
       include: { camarero: { select: { id: true, nombre: true } }, lineas: true },
     });
 
@@ -238,7 +240,7 @@ export default async function rutasInformes(app: FastifyInstance) {
       where: {
         estado: { not: 'ANULADO' },
         producto: { tipo: 'COVER' },
-        pedido: { estado: 'COBRADO', cerradoEn: { gte: q.desde, lte: q.hasta } },
+        pedido: { estado: 'COBRADO', esPractica: false, cerradoEn: { gte: q.desde, lte: q.hasta } },
       },
       include: { producto: { select: { nombre: true, codigoRapido: true } } },
     });
@@ -271,7 +273,7 @@ export default async function rutasInformes(app: FastifyInstance) {
       select: { estado: true, personas: true, origen: true },
     });
     const pedidos = await prisma.pedido.findMany({
-      where: { abiertoEn: { gte: q.desde, lte: q.hasta }, estado: 'COBRADO' },
+      where: { abiertoEn: { gte: q.desde, lte: q.hasta }, estado: 'COBRADO', esPractica: false },
       select: { comensales: true, abiertoEn: true, cerradoEn: true, mesaId: true },
     });
     const duraciones = pedidos

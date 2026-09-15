@@ -45,7 +45,11 @@ export default function Caja() {
               Ábrela con el fondo inicial para poder cobrar en efectivo.
             </p>
             {puede('caja.abrir') && (
-              <button className="boton-primario mt-4" onClick={() => setDialogo('abrir')}>
+              <button
+                data-guia="caja-abrir"
+                className="boton-primario mt-4"
+                onClick={() => setDialogo('abrir')}
+              >
                 Abrir caja
               </button>
             )}
@@ -67,7 +71,11 @@ export default function Caja() {
                     </button>
                   )}
                   {puede('caja.cerrar') && (
-                    <button className="boton-primario" onClick={() => setDialogo('cerrar')}>
+                    <button
+                      data-guia="caja-cerrar"
+                      className="boton-primario"
+                      onClick={() => setDialogo('cerrar')}
+                    >
                       Cerrar caja (Z)
                     </button>
                   )}
@@ -83,7 +91,7 @@ export default function Caja() {
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <div className="tarjeta p-4">
+              <div data-guia="caja-efectivo" className="tarjeta p-4">
                 <h2 className="mb-3 font-bold text-slate-900">Efectivo en el cajón</h2>
                 <dl className="space-y-1.5 text-sm">
                   <Linea texto="Fondo inicial" valor={eur(caja.saldoInicialCent)} />
@@ -117,7 +125,7 @@ export default function Caja() {
               </div>
             </div>
 
-            <div className="tarjeta p-4">
+            <div data-guia="caja-movimientos" className="tarjeta p-4">
               <h2 className="mb-3 font-bold text-slate-900">Movimientos</h2>
               <div className="max-h-72 overflow-y-auto">
                 <table className="w-full text-sm">

@@ -18,6 +18,7 @@ al lado para cobrar con tarjeta.
 | **Caja** | Apertura con fondo, entradas y salidas, arqueo por denominaciones y cierre Z con descuadre. |
 | **Facturación** | Factura simplificada (ticket), completa con NIF y rectificativa. Recibo de 80 mm guardado en disco. |
 | **Usuarios / Roles** | Cinco roles con matriz de permisos, y registro de auditoría de todo lo sensible. |
+| **Formación** | Guías interactivas sobre el programa real, con énfasis en cobrar y cerrar caja. Modo prácticas aislado de la contabilidad. |
 | **Ludoteca** | Catálogo de juegos con préstamo a mesa, y el cover fee del local (4 € consumiendo / 7 € solo jugar). |
 
 ## Puesta en marcha
@@ -104,6 +105,7 @@ marcas de vegano, picante y recomendado para niños. Todo es editable desde
 
 ## Documentación
 
+- [Formación de empleados](docs/formacion.md)
 - [Tablets de cocina y barra](docs/tablets-cocina.md)
 - [Arquitectura y decisiones](docs/arquitectura.md)
 - [Facturación e IVA](docs/facturacion.md)
@@ -123,5 +125,6 @@ migrar a PostgreSQL el día que haya varios locales es cambiar el conector.
 ## Comprobaciones
 
 ```bash
-npm test          # 40 pruebas: IVA, descuentos y servicio completo de una mesa
+npm test          # 52 pruebas: IVA, descuentos, servicio completo de una mesa
+                  # y aislamiento del modo prácticas
 ```

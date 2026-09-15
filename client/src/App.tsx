@@ -12,6 +12,7 @@ import Caja from './pages/Caja';
 import Facturas from './pages/Facturas';
 import Informes from './pages/Informes';
 import Admin from './pages/Admin';
+import Formacion from './pages/Formacion';
 
 /** Envuelve una ruta que exige sesión y, opcionalmente, un permiso. */
 function Privada({ permiso, children }: { permiso?: string; children: React.ReactNode }) {
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/caja" element={<Privada permiso="caja.ver"><Caja /></Privada>} />
       <Route path="/facturas" element={<Privada permiso="factura.emitir"><Facturas /></Privada>} />
       <Route path="/informes" element={<Privada permiso="informes.ver"><Informes /></Privada>} />
+      <Route path="/formacion" element={<Privada permiso="carta.ver"><Formacion /></Privada>} />
       <Route path="/admin" element={<Privada permiso="usuarios.ver"><Admin /></Privada>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -113,9 +113,14 @@ export default async function rutasCobros(app: FastifyInstance) {
       throw invalido('Una factura completa necesita el NIF del cliente');
     }
 
-    const caja = await sesionCajaAbierta();
+    // Un pedido de formación se cobra igual de cara al empleado, pero por
+    // dentro no se cuelga de la caja ni consume número de factura: un número
+    // de la serie no se puede devolver, y borrarlo después dejaría un hueco
+    // en la numeración y rompería la cadena de huellas.
+    const practica = pedido.esPractica;
+    const caja = practica ? null : await sesionCajaAbierta();
     const tieneEfectivo = datos.pagos.some((p) => p.metodo === 'EFECTIVO');
-    if (tieneEfectivo && !caja) {
+    if (tieneEfectivo && !caja && !practica) {
       throw conflicto('No hay ninguna caja abierta: abre caja antes de cobrar en efectivo');
     }
 
@@ -138,6 +143,7 @@ export default async function rutasCobros(app: FastifyInstance) {
             ultimos4: p.ultimos4 ?? null,
             usuarioId: req.usuario!.id,
             sesionCajaId: caja?.id ?? null,
+            esPractica: practica,
           },
         });
         if (caja && p.metodo === 'EFECTIVO') {
@@ -176,7 +182,7 @@ export default async function rutasCobros(app: FastifyInstance) {
             sesionCajaId: caja?.id ?? pedido.sesionCajaId,
           },
         });
-        if (datos.emitirFactura) {
+        if (datos.emitirFactura && !practica) {
           factura = await emitirFactura({
             tx,
             pedidoId: id,
@@ -206,7 +212,7 @@ export default async function rutasCobros(app: FastifyInstance) {
 
     await auditar({
       usuarioId: req.usuario!.id,
-      accion: 'PEDIDO_COBRADO',
+      accion: practica ? 'PRACTICA_COBRO' : 'PEDIDO_COBRADO',
       entidad: 'Pedido',
       entidadId: id,
       detalle: {
@@ -224,6 +230,7 @@ export default async function rutasCobros(app: FastifyInstance) {
     return {
       pedido: mapearPedido(actualizado),
       cerrado: resultado.totalmenteCobrado,
+      esPractica: practica,
       factura: resultado.factura
         ? {
             id: resultado.factura.id,
@@ -234,6 +241,62 @@ export default async function rutasCobros(app: FastifyInstance) {
           }
         : null,
     };
+  });
+
+  /**
+   * Recibo de un cobro de prácticas. Se genera al vuelo y NO se guarda:
+   * no lleva número de serie ni huella, y sale marcado como sin validez.
+   */
+  app.get('/pedido/:id/recibo-practica', { preHandler: requierePermiso('cobro.realizar') }, async (req, rep) => {
+    const { id } = params(req, zId);
+    const pedido = await prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        lineas: true,
+        pagos: { where: { estado: 'COMPLETADO' } },
+        mesa: true,
+        camarero: { select: { nombre: true } },
+      },
+    });
+    if (!pedido) throw noEncontrado('Pedido');
+    if (!pedido.esPractica) throw invalido('Ese pedido no es de prácticas');
+
+    const { totales } = await totalesDePedido(id);
+    const { generarReciboHtml } = await import('./recibo.js');
+
+    const html = generarReciboHtml({
+      codigo: 'PRÁCTICAS · SIN VALIDEZ',
+      tipo: 'SIMPLIFICADA',
+      fechaEmision: new Date(),
+      local: await datosLocal(),
+      mesa: pedido.mesa?.nombre ?? null,
+      camarero: pedido.camarero?.nombre ?? null,
+      comensales: pedido.comensales,
+      pedidoNumero: pedido.numero,
+      lineas: totales.lineas.map((l) => ({
+        nombre: l.nombre,
+        cantidad: l.cantidad,
+        precioUnitCent: l.precioUnitCent + l.modificadorCent,
+        totalCent: l.totalCent,
+        invitada: l.invitada,
+      })),
+      desglose: totales.desglose,
+      descuentoCent: totales.descuentoTotalCent,
+      baseCent: totales.baseCent,
+      cuotaCent: totales.cuotaCent,
+      totalCent: totales.totalCent,
+      propinaCent: pedido.pagos.reduce((a, p) => a + p.propinaCent, 0),
+      pagos: pedido.pagos.map((p) => ({
+        metodo: p.metodo,
+        importeCent: p.importeCent,
+        ultimos4: p.ultimos4,
+        refAutorizacion: p.refAutorizacion,
+      })),
+      cambioCent: pedido.pagos.reduce((a, p) => a + (p.cambioCent ?? 0), 0) || undefined,
+      hash: 'SIN HUELLA - RECIBO DE FORMACION',
+    });
+
+    return rep.type('text/html; charset=utf-8').send(html);
   });
 
   /** Anula un cobro mal introducido (solo mientras no haya factura emitida). */

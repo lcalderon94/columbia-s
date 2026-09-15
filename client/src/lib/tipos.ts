@@ -154,6 +154,8 @@ export interface Pedido {
   numero: number;
   tipo: string;
   estado: string;
+  /** Pedido de formación: no factura, no toca caja, no cuenta como venta. */
+  esPractica: boolean;
   comensales: number;
   notas: string | null;
   abiertoEn: string;

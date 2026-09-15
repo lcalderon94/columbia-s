@@ -5,6 +5,8 @@ import { useSesion } from '../lib/sesion';
 import { api } from '../lib/api';
 import { eur } from '../lib/formato';
 import type { ResumenHoy } from '../lib/tipos';
+import BannerPracticas from './BannerPracticas';
+import Bienvenida from './Bienvenida';
 
 interface Enlace {
   a: string;
@@ -29,6 +31,7 @@ const ENLACES: Enlace[] = [
   { a: '/caja', texto: 'Caja', permiso: 'caja.ver', icono: <Icono d="M3 7h18v12H3zM3 7l2-4h14l2 4M9 12h6" /> },
   { a: '/facturas', texto: 'Facturas', permiso: 'factura.emitir', icono: <Icono d="M6 2h9l5 5v15H6zM15 2v5h5M9 13h6M9 17h4" /> },
   { a: '/informes', texto: 'Informes', permiso: 'informes.ver', icono: <Icono d="M3 3v18h18M7 15v3M12 9v9M17 5v13" /> },
+  { a: '/formacion', texto: 'Formación', permiso: 'carta.ver', icono: <Icono d="M12 14l9-5-9-5-9 5 9 5zM12 14v7M5 11v4a7 3 0 0 0 14 0v-4" /> },
   { a: '/admin', texto: 'Ajustes', permiso: 'usuarios.ver', icono: <Icono d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10.6 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /> },
 ];
 
@@ -57,7 +60,7 @@ export default function Marco({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-100">
-      <aside className="flex w-20 flex-col items-center gap-1 bg-marca-950 py-3 lg:w-52 lg:items-stretch lg:px-3">
+      <aside data-guia="menu" className="flex w-20 flex-col items-center gap-1 bg-marca-950 py-3 lg:w-52 lg:items-stretch lg:px-3">
         <div className="mb-3 px-1 text-center lg:text-left">
           <p className="text-lg font-bold tracking-tight text-white">
             Columbia<span className="text-marca-400">'s</span>
@@ -72,6 +75,7 @@ export default function Marco({ children }: { children: ReactNode }) {
             <NavLink
               key={e.a}
               to={e.a}
+              data-guia={`menu-${e.a.slice(1)}`}
               className={({ isActive }) =>
                 `flex flex-col items-center gap-1 rounded-lg px-2 py-2.5 text-[11px] font-medium transition lg:flex-row lg:gap-3 lg:text-sm ${
                   isActive
@@ -97,7 +101,7 @@ export default function Marco({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-2.5">
-          <div className="flex items-center gap-4 text-sm">
+          <div data-guia="cabecera" className="flex items-center gap-4 text-sm">
             {hoy && (
               <>
                 {/* La recaudación no se enseña en las tablets de cocina y barra:
@@ -111,7 +115,7 @@ export default function Marco({ children }: { children: ReactNode }) {
               </>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div data-guia="usuario" className="flex items-center gap-2">
             <div className="text-right">
               <p className="text-sm font-semibold leading-tight text-slate-800">{usuario?.nombre}</p>
               <p className="text-[11px] uppercase tracking-wide text-slate-500">{usuario?.rol}</p>
@@ -125,7 +129,11 @@ export default function Marco({ children }: { children: ReactNode }) {
           </div>
         </header>
 
+        <BannerPracticas />
+
         <main className="flex-1 overflow-hidden">{children}</main>
+
+        <Bienvenida />
       </div>
     </div>
   );

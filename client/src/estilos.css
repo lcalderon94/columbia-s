@@ -60,3 +60,42 @@
 ::-webkit-scrollbar-track {
   @apply bg-transparent;
 }
+
+/* --- Guías de formación (driver.js) ------------------------------------ */
+.driver-popover.guia-columbias {
+  @apply rounded-xl bg-white shadow-2xl;
+  max-width: 380px;
+  padding: 18px 20px;
+}
+.driver-popover.guia-columbias .driver-popover-title {
+  @apply text-base font-bold text-slate-900;
+  margin-bottom: 6px;
+}
+.driver-popover.guia-columbias .driver-popover-description {
+  @apply text-sm leading-relaxed text-slate-600;
+}
+.driver-popover.guia-columbias .driver-popover-description strong {
+  @apply font-semibold text-slate-900;
+}
+.driver-popover.guia-columbias .driver-popover-progress-text {
+  @apply text-xs font-medium text-slate-400;
+}
+.driver-popover.guia-columbias .driver-popover-navigation-btns {
+  @apply gap-2;
+}
+.driver-popover.guia-columbias button {
+  @apply rounded-lg border-0 px-3 py-1.5 text-sm font-semibold shadow-none;
+  text-shadow: none;
+}
+.driver-popover.guia-columbias .driver-popover-next-btn {
+  @apply bg-marca-600 text-white hover:bg-marca-700;
+}
+.driver-popover.guia-columbias .driver-popover-prev-btn {
+  @apply bg-slate-100 text-slate-600 hover:bg-slate-200;
+}
+.driver-popover.guia-columbias .driver-popover-close-btn {
+  @apply text-slate-400 hover:text-slate-700;
+}
+.driver-popover.guia-columbias .driver-popover-arrow {
+  border-color: white;
+}

@@ -36,6 +36,7 @@ export function mapearPedido(p: any) {
     numero: p.numero,
     tipo: p.tipo,
     estado: p.estado,
+    esPractica: p.esPractica,
     comensales: p.comensales,
     notas: p.notas,
     abiertoEn: p.abiertoEn,

@@ -21,6 +21,7 @@ import rutasCocina from './modules/cocina/rutas.js';
 import rutasCobros from './modules/cobros/rutas.js';
 import rutasCaja from './modules/caja/rutas.js';
 import rutasInformes from './modules/informes/rutas.js';
+import rutasFormacion from './modules/formacion/rutas.js';
 
 export async function construirApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -84,6 +85,7 @@ export async function construirApp(): Promise<FastifyInstance> {
   await app.register(rutasCobros, { prefix: '/api/cobros' });
   await app.register(rutasCaja, { prefix: '/api/caja' });
   await app.register(rutasInformes, { prefix: '/api/informes' });
+  await app.register(rutasFormacion, { prefix: '/api/formacion' });
 
   // -- Aplicación compilada -------------------------------------------------
   // Si existe client/dist se sirve desde aquí, para que el local tenga una

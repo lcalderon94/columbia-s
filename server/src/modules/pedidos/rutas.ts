@@ -15,6 +15,8 @@ const zCrearPedido = z.object({
   mesaId: z.string().optional().nullable(),
   comensales: z.number().int().min(1).max(60).default(2),
   notas: z.string().optional().nullable(),
+  /** Pedido de formación: no factura, no toca caja y no cuenta en informes. */
+  esPractica: z.boolean().default(false),
 });
 
 const zModificador = z.object({ nombre: z.string(), precioCent: z.number().int().default(0) });
@@ -94,6 +96,7 @@ export default async function rutasPedidos(app: FastifyInstance) {
           comensales: datos.comensales,
           camareroId: req.usuario!.id,
           notas: datos.notas || null,
+          esPractica: datos.esPractica,
         },
       });
       if (datos.mesaId) {

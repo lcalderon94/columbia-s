@@ -44,7 +44,7 @@ export default function Juegos() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
+      <div data-guia="juegos-filtros" className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white px-4 py-2.5">
         <input
           className="campo max-w-xs"
           placeholder="Buscar juego…"
@@ -106,7 +106,7 @@ export default function Juegos() {
         ) : lista.length === 0 ? (
           <Vacio titulo="Ningún juego coincide" descripcion="Prueba a quitar algún filtro." />
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+          <div data-guia="juegos-lista" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {lista.map((j) => (
               <div key={j.id} className="tarjeta flex flex-col p-3">
                 <div className="flex items-start justify-between gap-2">

@@ -28,7 +28,7 @@ async function resumenSesion(sesionId: string, tx: Tx = prisma) {
       abiertaPor: { select: { id: true, nombre: true } },
       cerradaPor: { select: { id: true, nombre: true } },
       movimientos: { orderBy: { creadoEn: 'asc' }, include: { usuario: { select: { nombre: true } } } },
-      pagos: { where: { estado: 'COMPLETADO' } },
+      pagos: { where: { estado: 'COMPLETADO', esPractica: false } },
     },
   });
   if (!sesion) throw noEncontrado('Sesión de caja');
@@ -116,7 +116,7 @@ export default async function rutasCaja(app: FastifyInstance) {
       include: {
         abiertaPor: { select: { nombre: true } },
         cerradaPor: { select: { nombre: true } },
-        pagos: { where: { estado: 'COMPLETADO' }, select: { importeCent: true } },
+        pagos: { where: { estado: 'COMPLETADO', esPractica: false }, select: { importeCent: true } },
       },
     });
     return sesiones.map((s) => ({
@@ -201,8 +201,9 @@ export default async function rutasCaja(app: FastifyInstance) {
     const sesion = await prisma.sesionCaja.findFirst({ where: { estado: 'ABIERTA' } });
     if (!sesion) throw conflicto('No hay ninguna caja abierta');
 
+    // Los pedidos de formación no cuentan: no llevan dinero real dentro.
     const abiertos = await prisma.pedido.count({
-      where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] } },
+      where: { estado: { in: ['ABIERTO', 'PARA_COBRAR'] }, esPractica: false },
     });
     if (abiertos > 0) {
       throw conflicto(`Quedan ${abiertos} pedidos sin cobrar: ciérralos antes de cerrar caja`);

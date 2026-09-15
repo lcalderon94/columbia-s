@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ErrorApi } from '../lib/api';
 import { useCanal } from '../lib/socket';
 import { useSesion } from '../lib/sesion';
+import { usePracticas } from '../lib/practicas';
 import { eur, hora, minutosDesde, ETIQUETA_ESTADO_MESA } from '../lib/formato';
 import type { MesaResumen, Sala as TipoSala } from '../lib/tipos';
 import { Cargando, Chip, Modal, Aviso } from '../components/ui';
@@ -20,6 +21,7 @@ export default function Sala() {
   const navegar = useNavigate();
   const qc = useQueryClient();
   const puede = useSesion((s) => s.puede);
+  const enPracticas = usePracticas((s) => s.activo);
   const [zonaActiva, setZonaActiva] = useState<string | null>(null);
   const [mesaSel, setMesaSel] = useState<MesaResumen | null>(null);
   const [comensales, setComensales] = useState(2);
@@ -39,7 +41,8 @@ export default function Sala() {
 
   const abrirPedido = useMutation({
     mutationFn: (datos: { mesaId: string; comensales: number }) =>
-      api.post<{ id: string }>('/pedidos', { tipo: 'MESA', ...datos }),
+      // En modo prácticas el pedido nace marcado: no facturará ni tocará caja
+      api.post<{ id: string }>('/pedidos', { tipo: 'MESA', ...datos, esPractica: enPracticas }),
     onSuccess: (p) => {
       setMesaSel(null);
       navegar(`/pedido/${p.id}`);
@@ -76,7 +79,7 @@ export default function Sala() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
-        <div className="flex flex-wrap gap-1.5">
+        <div data-guia="zonas" className="flex flex-wrap gap-1.5">
           {zonas.map((z) => (
             <button
               key={z.id}
@@ -94,7 +97,7 @@ export default function Sala() {
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-3 text-sm">
+        <div data-guia="leyenda" className="flex items-center gap-3 text-sm">
           <Leyenda color="bg-white ring-slate-300" texto={`${data.resumen.libres} libres`} />
           <Leyenda color="bg-amber-50 ring-amber-400" texto={`${data.resumen.ocupadas} ocupadas`} />
           <Leyenda color="bg-sky-50 ring-sky-400" texto={`${data.resumen.reservadas} reservadas`} />
@@ -109,8 +112,8 @@ export default function Sala() {
           <p className="p-8 text-center text-slate-500">Esta zona no tiene mesas.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-            {zona.mesas.map((m) => (
-              <TarjetaMesa key={m.id} mesa={m} onTocar={() => alTocarMesa(m)} />
+            {zona.mesas.map((m, i) => (
+              <TarjetaMesa key={m.id} mesa={m} indice={i} onTocar={() => alTocarMesa(m)} />
             ))}
           </div>
         )}
@@ -189,11 +192,20 @@ export default function Sala() {
   );
 }
 
-function TarjetaMesa({ mesa, onTocar }: { mesa: MesaResumen; onTocar: () => void }) {
+function TarjetaMesa({
+  mesa,
+  onTocar,
+  indice,
+}: {
+  mesa: MesaResumen;
+  onTocar: () => void;
+  indice?: number;
+}) {
   const minutos = mesa.pedido ? minutosDesde(mesa.pedido.abiertoEn) : 0;
   return (
     <button
       onClick={onTocar}
+      data-guia={indice === 0 ? 'mesa' : undefined}
       className={`flex min-h-[132px] flex-col items-start gap-1 rounded-xl p-3 text-left ring-2 transition active:scale-[0.98] ${
         COLOR_ESTADO[mesa.estado] ?? 'bg-white ring-slate-300'
       }`}

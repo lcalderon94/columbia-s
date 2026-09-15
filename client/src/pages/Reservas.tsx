@@ -62,7 +62,7 @@ export default function Reservas() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2.5">
-        <div className="flex items-center gap-2">
+        <div data-guia="reservas-dia" className="flex items-center gap-2">
           <button className="boton-suave" onClick={() => setDia(dayjs(dia).subtract(1, 'day').format('YYYY-MM-DD'))}>
             ←
           </button>
@@ -84,7 +84,7 @@ export default function Reservas() {
             <span className="font-bold text-slate-900">{lista.length}</span> reservas ·{' '}
             <span className="font-bold text-slate-900">{personas}</span> personas
           </span>
-          <button className="boton-primario" onClick={() => setNueva(true)}>
+          <button data-guia="reservas-nueva" className="boton-primario" onClick={() => setNueva(true)}>
             + Nueva reserva
           </button>
         </div>

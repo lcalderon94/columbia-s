@@ -62,7 +62,7 @@ export default function Cocina({ destino }: { destino: 'COCINA' | 'BARRA' }) {
           <h1 className="text-lg font-bold text-white">
             {destino === 'COCINA' ? '🍔 Cocina' : '🍹 Barra'}
           </h1>
-          <div className="flex gap-3 text-sm">
+          <div data-guia="kds-resumen" className="flex gap-3 text-sm">
             <span className="text-rose-400">{data.resumen.nuevos} nuevas</span>
             <span className="text-amber-400">{data.resumen.enPreparacion} en marcha</span>
             <span className="text-emerald-400">{data.resumen.listos} listas</span>
@@ -81,6 +81,7 @@ export default function Cocina({ destino }: { destino: 'COCINA' | 'BARRA' }) {
             {sonido ? '🔔 Aviso activado' : '🔕 Aviso apagado'}
           </button>
           <button
+            data-guia="kds-pantalla"
             onClick={alternar}
             title="Pantalla completa, para dejar la tablet fija en esta vista"
             className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600"
@@ -93,7 +94,7 @@ export default function Cocina({ destino }: { destino: 'COCINA' | 'BARRA' }) {
       {data.tickets.length === 0 ? (
         <Vacio titulo="No hay comandas pendientes" descripcion="Todo servido. Buen trabajo." />
       ) : (
-        <div className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 md:grid-cols-3">
+        <div data-guia="kds-columnas" className="grid flex-1 grid-cols-1 gap-3 overflow-y-auto p-3 md:grid-cols-3">
           {columnas.map((col) => {
             const suyos = data.tickets.filter((t) => t.estado === col.estado);
             return (

@@ -38,6 +38,7 @@ model Usuario {
   refreshTokens    RefreshToken[]
   reservasCreadas  Reserva[]
   prestamosJuego   PrestamoJuego[]
+  formacion        ProgresoFormacion[]
 }
 
 model RefreshToken {
@@ -76,6 +77,19 @@ model Contador {
 model Ajuste {
   clave String @id
   valor String
+}
+
+/// Qué guías de formación ha completado cada empleado. Se guarda en el
+/// servidor para que el progreso le siga aunque cambie de puesto o de tablet.
+model ProgresoFormacion {
+  id          String   @id @default(cuid())
+  usuarioId   String
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  guia        String // identificador de la guía: cobro, caja-cerrar...
+  completadaEn DateTime @default(now())
+
+  @@unique([usuarioId, guia])
+  @@index([usuarioId])
 }
 
 // ---------------------------------------------------------------------------
@@ -312,6 +326,11 @@ model Pedido {
   descuentoValor  Int     @default(0)
   descuentoMotivo String?
 
+  // Pedido de formacion: se comporta igual que uno real en sala y cocina,
+  // pero nunca emite factura, no toca la caja y no cuenta en los informes.
+  // Se borra al terminar las practicas.
+  esPractica Boolean @default(false)
+
   abiertoEn DateTime  @default(now())
   cerradoEn DateTime?
   anuladoEn DateTime?
@@ -409,9 +428,10 @@ model Pago {
   refAutorizacion String?
   ultimos4        String?
 
-  estado    String  @default("COMPLETADO") // COMPLETADO | ANULADO
-  usuarioId String?
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  estado     String  @default("COMPLETADO") // COMPLETADO | ANULADO
+  esPractica Boolean @default(false)
+  usuarioId  String?
+  usuario    Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
   sesionCajaId String?
   sesionCaja   SesionCaja? @relation(fields: [sesionCajaId], references: [id], onDelete: SetNull)
