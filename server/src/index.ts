@@ -1,7 +1,7 @@
 import os from 'node:os';
 import { Server as SocketServer } from 'socket.io';
 import { construirApp } from './app.js';
-import { env } from './lib/env.js';
+import { env, claveDeEjemplo } from './lib/env.js';
 import { prisma } from './lib/db.js';
 import { registrarIo, type Canal } from './lib/realtime.js';
 import { origenesPermitidos } from './lib/origenes.js';
@@ -72,7 +72,11 @@ function mostrarDirecciones(): void {
   } else {
     console.log('    Sin red detectada: las tablets no podrán conectarse.');
   }
-  console.log('');
+  if (claveDeEjemplo) {
+    console.log('  AVISO: se están firmando las sesiones con la clave de ejemplo.');
+    console.log('  Pon un JWT_SECRET propio en server/.env y reinicia.');
+    console.log('');
+  }
 }
 
 arrancar().catch((e) => {
