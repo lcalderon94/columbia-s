@@ -47,6 +47,16 @@ describe('servicio completo de una mesa', () => {
     expect(r.json().saldoInicialCent).toBe(15000);
   });
 
+  it('las mesas salen en orden natural: M9 antes que M10', async () => {
+    const sala = (await camarero.get('/api/sala')).json();
+    const nombres = sala.zonas
+      .find((z: any) => z.nombre === 'Sala')
+      .mesas.map((m: any) => m.nombre);
+    expect(nombres.slice(0, 10)).toEqual([
+      'M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10',
+    ]);
+  });
+
   it('abre un pedido en una mesa libre y la marca ocupada', async () => {
     const sala = (await camarero.get('/api/sala')).json();
     mesaId = sala.zonas[0].mesas[0].id;

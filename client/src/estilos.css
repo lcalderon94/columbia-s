@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-slate-100 text-slate-900 antialiased;
+    /* Pantalla táctil: sin selección accidental al arrastrar por la carta */
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Los números de dinero nunca deben bailar de ancho */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .boton {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+           transition active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+  }
+  .boton-primario {
+    @apply boton bg-marca-600 text-white hover:bg-marca-700 shadow-sm;
+  }
+  .boton-secundario {
+    @apply boton bg-white text-slate-700 ring-1 ring-inset ring-slate-300 hover:bg-slate-50;
+  }
+  .boton-peligro {
+    @apply boton bg-rose-600 text-white hover:bg-rose-700;
+  }
+  .boton-suave {
+    @apply boton bg-slate-200 text-slate-700 hover:bg-slate-300;
+  }
+  .tarjeta {
+    @apply rounded-xl bg-white shadow-sm ring-1 ring-slate-200;
+  }
+  .campo {
+    @apply w-full rounded-lg border-0 px-3 py-2 text-sm text-slate-900 ring-1 ring-inset ring-slate-300
+           placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-marca-600;
+  }
+  .etiqueta {
+    @apply block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1;
+  }
+  .chip {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+}
+
+/* Scrollbar discreta en las columnas del TPV y del KDS */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-slate-300;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}

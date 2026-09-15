@@ -49,9 +49,9 @@ const TODOS: Permiso[] = [...PERMISOS];
 
 export const PERMISOS_POR_ROL: Record<Rol, Permiso[]> = {
   ADMIN: TODOS,
-  ENCARGADO: TODOS.filter((p) => p !== 'usuarios.gestionar' && p !== 'ajustes.editar').concat([
-    'usuarios.ver',
-  ]),
+  // El encargado lo puede todo salvo tocar el equipo y los ajustes del local;
+  // ver el equipo sí (ya viene incluido en la lista completa).
+  ENCARGADO: TODOS.filter((p) => p !== 'usuarios.gestionar' && p !== 'ajustes.editar'),
   CAMARERO: [
     'sala.ver',
     'reservas.ver',

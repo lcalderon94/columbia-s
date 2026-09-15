@@ -82,6 +82,14 @@ function mapearMesa(m: any) {
   };
 }
 
+/**
+ * Orden natural: "M10" va detras de "M9", no entre "M1" y "M2".
+ * SQLite ordena como texto, asi que el criterio se aplica aqui.
+ */
+function porNombreNatural(a: { nombre: string }, b: { nombre: string }): number {
+  return a.nombre.localeCompare(b.nombre, 'es', { numeric: true, sensitivity: 'base' });
+}
+
 const incluirMesa = {
   zona: true,
   unidas: { select: { id: true, nombre: true } },
@@ -110,12 +118,8 @@ export default async function rutasSala(app: FastifyInstance) {
       where: { activa: true },
       orderBy: { orden: 'asc' },
     });
-    const mesas = await prisma.mesa.findMany({
-      where: { activa: true },
-      orderBy: { nombre: 'asc' },
-      include: incluirMesa,
-    });
-    const mapeadas = mesas.map(mapearMesa);
+    const mesas = await prisma.mesa.findMany({ where: { activa: true }, include: incluirMesa });
+    const mapeadas = mesas.map(mapearMesa).sort(porNombreNatural);
     return {
       zonas: zonas.map((z) => ({
         ...z,
