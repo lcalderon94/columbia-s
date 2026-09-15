@@ -4,6 +4,7 @@ import { api } from '../lib/api';
 import { useCanal, pitido } from '../lib/socket';
 import { hora } from '../lib/formato';
 import type { TicketCocina } from '../lib/tipos';
+import { useEvitarSuspension, usePantallaCompleta } from '../hooks/pantalla';
 import { Cargando, Vacio } from '../components/ui';
 
 interface Respuesta {
@@ -16,6 +17,9 @@ export default function Cocina({ destino }: { destino: 'COCINA' | 'BARRA' }) {
   const qc = useQueryClient();
   const [sonido, setSonido] = useState(true);
   const conocidos = useRef<Set<string>>(new Set());
+  const { completa, alternar } = usePantallaCompleta();
+  // La pantalla de producción está siempre a la vista: no debe apagarse.
+  useEvitarSuspension(true);
 
   const { data, isLoading } = useQuery<Respuesta>({
     queryKey: ['cocina', destino],
@@ -69,12 +73,21 @@ export default function Cocina({ destino }: { destino: 'COCINA' | 'BARRA' }) {
             )}
           </div>
         </div>
-        <button
-          onClick={() => setSonido((s) => !s)}
-          className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600"
-        >
-          {sonido ? '🔔 Aviso activado' : '🔕 Aviso apagado'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setSonido((s) => !s)}
+            className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600"
+          >
+            {sonido ? '🔔 Aviso activado' : '🔕 Aviso apagado'}
+          </button>
+          <button
+            onClick={alternar}
+            title="Pantalla completa, para dejar la tablet fija en esta vista"
+            className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm text-slate-200 hover:bg-slate-600"
+          >
+            {completa ? '↙ Salir' : '⛶ Pantalla completa'}
+          </button>
+        </div>
       </div>
 
       {data.tickets.length === 0 ? (

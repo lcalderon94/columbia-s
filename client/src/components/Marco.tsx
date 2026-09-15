@@ -100,7 +100,9 @@ export default function Marco({ children }: { children: ReactNode }) {
           <div className="flex items-center gap-4 text-sm">
             {hoy && (
               <>
-                <Dato titulo="Venta hoy" valor={eur(hoy.ventaCent)} />
+                {/* La recaudación no se enseña en las tablets de cocina y barra:
+                    están colgadas a la vista de todo el mundo. */}
+                {puede('caja.ver') && <Dato titulo="Venta hoy" valor={eur(hoy.ventaCent)} />}
                 <Dato titulo="Mesas" valor={`${hoy.mesas.ocupadas}/${hoy.mesas.total}`} />
                 <Dato titulo="Abiertos" valor={String(hoy.pedidosAbiertos)} />
                 {hoy.ticketsPendientes > 0 && (

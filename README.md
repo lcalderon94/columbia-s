@@ -34,6 +34,12 @@ Hay tres archivos para doble clic, sin tocar la consola:
 | `INSTALAR.bat` | Una sola vez, al montar el equipo. |
 | `ARRANCAR.bat` | Al empezar el turno. Abre la aplicación en el navegador solo. |
 | `COPIA-SEGURIDAD.bat` | Al cerrar el local. Guarda base de datos y recibos en `copias\<fecha>`. |
+| `ACTUALIZAR.bat` | Cuando haya cambios nuevos que descargar. |
+| `DESARROLLO.bat` | Solo para tocar el código: recarga sola al guardar. |
+
+Al arrancar, la ventana negra escribe la dirección para las tablets
+(`http://192.168.x.x:4000`). Todo va por un único puerto: mostrador, cocina y
+barra.
 
 Para que arranque solo al encender el PC: `Win + R`, escribe `shell:startup` y
 deja ahí un acceso directo a `ARRANCAR.bat`.
@@ -98,6 +104,7 @@ marcas de vegano, picante y recomendado para niños. Todo es editable desde
 
 ## Documentación
 
+- [Tablets de cocina y barra](docs/tablets-cocina.md)
 - [Arquitectura y decisiones](docs/arquitectura.md)
 - [Facturación e IVA](docs/facturacion.md)
 - [Roles y permisos](docs/roles-permisos.md)

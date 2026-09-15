@@ -1,8 +1,13 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import estaticos from '@fastify/static';
 import { ZodError } from 'zod';
 import { env } from './lib/env.js';
+import { origenesPermitidos } from './lib/origenes.js';
 import { ErrorApp } from './lib/errores.js';
 
 import rutasAuth from './modules/auth/rutas.js';
@@ -23,10 +28,10 @@ export async function construirApp(): Promise<FastifyInstance> {
     bodyLimit: 2 * 1024 * 1024,
   });
 
-  await app.register(cors, {
-    origin: env.CLIENT_ORIGIN === '*' ? true : env.CLIENT_ORIGIN.split(','),
-    credentials: true,
-  });
+  // En el local todo va por la red de casa: el servidor sirve también la
+  // aplicación, así que las tablets entran por el mismo origen. La lista de
+  // orígenes es la misma que usa el WebSocket (ver lib/origenes.ts).
+  await app.register(cors, { origin: origenesPermitidos(), credentials: true });
   await app.register(jwt, { secret: env.JWT_SECRET });
 
   // Traduce cualquier error a una respuesta con forma estable para el cliente.
@@ -79,6 +84,29 @@ export async function construirApp(): Promise<FastifyInstance> {
   await app.register(rutasCobros, { prefix: '/api/cobros' });
   await app.register(rutasCaja, { prefix: '/api/caja' });
   await app.register(rutasInformes, { prefix: '/api/informes' });
+
+  // -- Aplicación compilada -------------------------------------------------
+  // Si existe client/dist se sirve desde aquí, para que el local tenga una
+  // sola dirección (http://<ip-del-pc>:4000) que vale para el mostrador y
+  // para las tablets de cocina y barra.
+  const aqui = path.dirname(fileURLToPath(import.meta.url));
+  const carpetaCliente = path.resolve(aqui, '../../client/dist');
+
+  if (fs.existsSync(path.join(carpetaCliente, 'index.html'))) {
+    await app.register(estaticos, { root: carpetaCliente, prefix: '/' });
+
+    // La aplicación lleva sus propias rutas (/sala, /cocina...). Cualquier
+    // dirección que no sea de la API devuelve el index y decide el navegador.
+    app.setNotFoundHandler((req, rep) => {
+      if (req.url.startsWith('/api') || req.url.startsWith('/socket')) {
+        return rep.status(404).send({ error: 'No encontrado', codigo: 'NO_ENCONTRADO' });
+      }
+      return rep.type('text/html').send(fs.readFileSync(path.join(carpetaCliente, 'index.html')));
+    });
+    app.log.info('Sirviendo la aplicación compilada desde client/dist');
+  } else {
+    app.log.warn('No hay client/dist: ejecuta "npm run build" para servir la aplicación');
+  }
 
   return app;
 }
