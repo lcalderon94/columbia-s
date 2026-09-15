@@ -1,0 +1,531 @@
+// Columbia's - Board Game Cafe
+// Modelo de datos. Todo el dinero se guarda en centimos (Int) para evitar
+// errores de coma flotante. SQLite no soporta enums en Prisma, asi que los
+// estados viajan como String y se validan con Zod en `src/types/dominio.ts`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios, roles y auditoria
+// ---------------------------------------------------------------------------
+
+model Usuario {
+  id            String   @id @default(cuid())
+  nombre        String
+  email         String?  @unique
+  pinHash       String
+  passwordHash  String?
+  rol           String // ADMIN | ENCARGADO | CAMARERO | COCINA | BARRA
+  color         String   @default("#2563eb")
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  pedidos          Pedido[]
+  pagos            Pago[]
+  facturas         Factura[]
+  cajasAbiertas    SesionCaja[]        @relation("CajaAbiertaPor")
+  cajasCerradas    SesionCaja[]        @relation("CajaCerradaPor")
+  movimientosCaja  MovimientoCaja[]
+  auditoria        RegistroAuditoria[]
+  refreshTokens    RefreshToken[]
+  reservasCreadas  Reserva[]
+  prestamosJuego   PrestamoJuego[]
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  usuarioId  String
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  expiraEn   DateTime
+  revocadoEn DateTime?
+  creadoEn   DateTime  @default(now())
+
+  @@index([usuarioId])
+}
+
+model RegistroAuditoria {
+  id        String   @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  accion    String
+  entidad   String
+  entidadId String?
+  detalle   String? // JSON
+  creadoEn  DateTime @default(now())
+
+  @@index([entidad, entidadId])
+  @@index([creadoEn])
+}
+
+// Contadores atomicos (numero de pedido, codigo de reserva, ...).
+// SQLite solo permite autoincrement() en la PK, asi que los llevamos aqui.
+model Contador {
+  clave String @id
+  valor Int    @default(0)
+}
+
+model Ajuste {
+  clave String @id
+  valor String
+}
+
+// ---------------------------------------------------------------------------
+// Sala: zonas y mesas
+// ---------------------------------------------------------------------------
+
+model Zona {
+  id     String  @id @default(cuid())
+  nombre String  @unique
+  orden  Int     @default(0)
+  color  String  @default("#64748b")
+  activa Boolean @default(true)
+  mesas  Mesa[]
+}
+
+model Mesa {
+  id        String  @id @default(cuid())
+  zonaId    String
+  zona      Zona    @relation(fields: [zonaId], references: [id], onDelete: Cascade)
+  nombre    String
+  capacidad Int     @default(4)
+  forma     String  @default("REDONDA") // REDONDA | CUADRADA | RECTANGULAR | BARRA
+  posX      Int     @default(40)
+  posY      Int     @default(40)
+  ancho     Int     @default(96)
+  alto      Int     @default(96)
+  estado    String  @default("LIBRE") // LIBRE | OCUPADA | RESERVADA | LIMPIEZA | FUERA_SERVICIO
+  activa    Boolean @default(true)
+
+  // Union de mesas: las secundarias apuntan a la principal
+  unidaAId String?
+  unidaA   Mesa?   @relation("UnionMesas", fields: [unidaAId], references: [id], onDelete: SetNull)
+  unidas   Mesa[]  @relation("UnionMesas")
+
+  pedidos   Pedido[]
+  reservas  ReservaMesa[]
+  prestamos PrestamoJuego[]
+
+  @@unique([zonaId, nombre])
+  @@index([estado])
+}
+
+// ---------------------------------------------------------------------------
+// Reservas
+// ---------------------------------------------------------------------------
+
+model Reserva {
+  id            String   @id @default(cuid())
+  codigo        String   @unique
+  clienteNombre String
+  telefono      String?
+  email         String?
+  fecha         DateTime // inicio de la reserva
+  duracionMin   Int      @default(120)
+  personas      Int
+  estado        String   @default("CONFIRMADA") // PENDIENTE|CONFIRMADA|SENTADA|COMPLETADA|NO_SHOW|CANCELADA
+  origen        String   @default("LOCAL") // LOCAL|TELEFONO|WEB
+  notas         String?
+
+  juegoSolicitadoId String?
+  juegoSolicitado   Juego?  @relation(fields: [juegoSolicitadoId], references: [id], onDelete: SetNull)
+
+  mesas    ReservaMesa[]
+  pedidoId String?       @unique
+  pedido   Pedido?       @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+
+  creadoPorId   String?
+  creadoPor     Usuario? @relation(fields: [creadoPorId], references: [id], onDelete: SetNull)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+
+  @@index([fecha])
+  @@index([estado])
+}
+
+model ReservaMesa {
+  reservaId String
+  mesaId    String
+  reserva   Reserva @relation(fields: [reservaId], references: [id], onDelete: Cascade)
+  mesa      Mesa    @relation(fields: [mesaId], references: [id], onDelete: Cascade)
+
+  @@id([reservaId, mesaId])
+}
+
+// ---------------------------------------------------------------------------
+// Carta: categorias, productos, modificadores y alergenos
+// ---------------------------------------------------------------------------
+
+model Alergeno {
+  id        String            @id // GLUTEN, LACTEOS, ...
+  nombre    String
+  icono     String?
+  productos ProductoAlergeno[]
+}
+
+model Categoria {
+  id        String     @id @default(cuid())
+  nombre    String     @unique
+  orden     Int        @default(0)
+  destino   String     @default("COCINA") // COCINA | BARRA | NINGUNO
+  color     String     @default("#0ea5e9")
+  activa    Boolean    @default(true)
+  productos Producto[]
+}
+
+model Producto {
+  id          String  @id @default(cuid())
+  categoriaId String
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  nombre      String
+  descripcion String?
+  precioCent  Int
+  ivaTipo     Int     @default(10) // 10 hosteleria, 21 venta para llevar de alcohol, 4 ...
+  destino     String? // sobreescribe el destino de la categoria
+  tipo        String  @default("NORMAL") // NORMAL | COVER
+
+  vegano              Boolean @default(false)
+  picante             Boolean @default(false)
+  kids                Boolean @default(false)
+  sinGlutenDisponible Boolean @default(false)
+
+  activo       Boolean @default(true)
+  orden        Int     @default(0)
+  codigoRapido String?
+
+  alergenos         ProductoAlergeno[]
+  gruposModificador GrupoModificadorProducto[]
+  lineas            LineaPedido[]
+
+  @@index([categoriaId])
+  @@index([activo])
+}
+
+model ProductoAlergeno {
+  productoId String
+  alergenoId String
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  alergeno   Alergeno @relation(fields: [alergenoId], references: [id], onDelete: Cascade)
+
+  @@id([productoId, alergenoId])
+}
+
+model GrupoModificador {
+  id            String  @id @default(cuid())
+  nombre        String
+  min           Int     @default(0)
+  max           Int     @default(1)
+  orden         Int     @default(0)
+  modificadores Modificador[]
+  productos     GrupoModificadorProducto[]
+}
+
+model Modificador {
+  id         String  @id @default(cuid())
+  grupoId    String
+  grupo      GrupoModificador @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+  nombre     String
+  precioCent Int     @default(0)
+  orden      Int     @default(0)
+  activo     Boolean @default(true)
+}
+
+model GrupoModificadorProducto {
+  productoId String
+  grupoId    String
+  orden      Int      @default(0)
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  grupo      GrupoModificador @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  @@id([productoId, grupoId])
+}
+
+// ---------------------------------------------------------------------------
+// Biblioteca de juegos de mesa
+// ---------------------------------------------------------------------------
+
+model Juego {
+  id           String  @id @default(cuid())
+  nombre       String  @unique
+  descripcion  String?
+  minJugadores Int     @default(2)
+  maxJugadores Int     @default(4)
+  duracionMin  Int     @default(45)
+  complejidad  Int     @default(2) // 1 a 5
+  categoria    String? // FAMILIAR | ESTRATEGIA | PARTY | CARTAS | ROL | INFANTIL
+  ubicacion    String? // estanteria / codigo
+  estado       String  @default("DISPONIBLE") // DISPONIBLE | PRESTADO | MANTENIMIENTO | PERDIDO
+  notas        String?
+  activo       Boolean @default(true)
+
+  prestamos PrestamoJuego[]
+  reservas  Reserva[]
+
+  @@index([estado])
+}
+
+model PrestamoJuego {
+  id        String    @id @default(cuid())
+  juegoId   String
+  juego     Juego     @relation(fields: [juegoId], references: [id], onDelete: Cascade)
+  mesaId    String?
+  mesa      Mesa?     @relation(fields: [mesaId], references: [id], onDelete: SetNull)
+  pedidoId  String?
+  pedido    Pedido?   @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  usuarioId String?
+  usuario   Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  inicioEn  DateTime  @default(now())
+  finEn     DateTime?
+  estado    String    @default("ACTIVO") // ACTIVO | DEVUELTO
+  notas     String?
+
+  @@index([estado])
+}
+
+// ---------------------------------------------------------------------------
+// Pedidos (comandas) y TPV
+// ---------------------------------------------------------------------------
+
+model Pedido {
+  id     String @id @default(cuid())
+  numero Int    @unique
+  tipo   String @default("MESA") // MESA | BARRA | LLEVAR
+  estado String @default("ABIERTO") // ABIERTO | PARA_COBRAR | COBRADO | ANULADO
+
+  mesaId     String?
+  mesa       Mesa?    @relation(fields: [mesaId], references: [id], onDelete: SetNull)
+  comensales Int      @default(1)
+  camareroId String?
+  camarero   Usuario? @relation(fields: [camareroId], references: [id], onDelete: SetNull)
+  notas      String?
+
+  descuentoTipo   String? // PORCENTAJE | IMPORTE
+  descuentoValor  Int     @default(0)
+  descuentoMotivo String?
+
+  abiertoEn DateTime  @default(now())
+  cerradoEn DateTime?
+  anuladoEn DateTime?
+  anuladoMotivo String?
+
+  sesionCajaId String?
+  sesionCaja   SesionCaja? @relation(fields: [sesionCajaId], references: [id], onDelete: SetNull)
+
+  lineas    LineaPedido[]
+  tickets   TicketCocina[]
+  pagos     Pago[]
+  facturas  Factura[]
+  reserva   Reserva?
+  prestamos PrestamoJuego[]
+
+  @@index([estado])
+  @@index([abiertoEn])
+}
+
+model LineaPedido {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  productoId String?
+  producto   Producto? @relation(fields: [productoId], references: [id], onDelete: SetNull)
+
+  // Snapshot: el precio y el nombre quedan congelados aunque cambie la carta
+  nombre            String
+  descripcion       String?
+  precioUnitCent    Int
+  cantidad          Int     @default(1)
+  ivaTipo           Int     @default(10)
+  modificadoresJson String? // [{nombre, precioCent}]
+  modificadorCent   Int     @default(0)
+  notas             String?
+
+  estado  String @default("PENDIENTE") // PENDIENTE | ENVIADO | EN_PREPARACION | LISTO | SERVIDO | ANULADO
+  destino String @default("COCINA") // COCINA | BARRA | NINGUNO
+  curso   Int    @default(1)
+
+  invitada       Boolean @default(false)
+  descuentoTipo  String?
+  descuentoValor Int     @default(0)
+  anuladaMotivo  String?
+
+  ticketId String?
+  ticket   TicketCocina? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  creadoEn  DateTime  @default(now())
+  enviadoEn DateTime?
+
+  @@index([pedidoId])
+  @@index([estado])
+}
+
+model TicketCocina {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  destino     String // COCINA | BARRA
+  numeroRonda Int    @default(1)
+  estado      String @default("NUEVO") // NUEVO | EN_PREPARACION | LISTO | ENTREGADO
+
+  creadoEn    DateTime  @default(now())
+  iniciadoEn  DateTime?
+  listoEn     DateTime?
+  entregadoEn DateTime?
+
+  lineas LineaPedido[]
+
+  @@index([estado, destino])
+}
+
+// ---------------------------------------------------------------------------
+// Cobros y facturacion
+// ---------------------------------------------------------------------------
+
+model Pago {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  metodo      String // EFECTIVO | TARJETA | BIZUM | VALE | INVITACION
+  importeCent Int
+  propinaCent Int    @default(0)
+
+  // Efectivo
+  entregadoCent Int?
+  cambioCent    Int?
+
+  // Datafono / TPV fisico: se anota la referencia de la operacion
+  refTerminal     String?
+  refAutorizacion String?
+  ultimos4        String?
+
+  estado    String  @default("COMPLETADO") // COMPLETADO | ANULADO
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  sesionCajaId String?
+  sesionCaja   SesionCaja? @relation(fields: [sesionCajaId], references: [id], onDelete: SetNull)
+
+  creadoEn  DateTime  @default(now())
+  anuladoEn DateTime?
+
+  @@index([pedidoId])
+  @@index([creadoEn])
+}
+
+model SerieFactura {
+  id              String    @id // S | F | R
+  nombre          String
+  prefijo         String
+  siguienteNumero Int       @default(1)
+  facturas        Factura[]
+}
+
+model Factura {
+  id      String       @id @default(cuid())
+  serieId String
+  serie   SerieFactura @relation(fields: [serieId], references: [id])
+  numero  Int
+  codigo  String       @unique // S-2026-000001
+
+  tipo         String  @default("SIMPLIFICADA") // SIMPLIFICADA | COMPLETA | RECTIFICATIVA
+  // NIF del emisor congelado en el momento de emitir: si manana cambian los
+  // datos fiscales del local, la cadena de huellas sigue verificando.
+  nifEmisor    String  @default("")
+  pedidoId     String?
+  pedido       Pedido? @relation(fields: [pedidoId], references: [id], onDelete: SetNull)
+  fechaEmision DateTime @default(now())
+
+  clienteNombre    String?
+  clienteNif       String?
+  clienteDireccion String?
+  clienteCp        String?
+  clienteCiudad    String?
+
+  lineasJson   String // snapshot inmutable de las lineas
+  desgloseJson String // [{ivaTipo, baseCent, cuotaCent}]
+  pagosJson    String // snapshot de los cobros
+
+  baseCent    Int
+  cuotaCent   Int
+  totalCent   Int
+  propinaCent Int    @default(0)
+
+  estado String @default("EMITIDA") // EMITIDA | ANULADA
+
+  rectificaAId  String?
+  rectificaA    Factura?  @relation("Rectificativas", fields: [rectificaAId], references: [id], onDelete: SetNull)
+  rectificadaPor Factura[] @relation("Rectificativas")
+
+  // Encadenado de huellas: cada registro incluye el hash del anterior.
+  // Es la base de un registro de facturacion inalterable (estilo Veri*Factu).
+  hash         String
+  hashAnterior String?
+
+  rutaHtml String?
+  rutaPdf  String?
+
+  usuarioId String?
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  creadoEn  DateTime @default(now())
+
+  @@unique([serieId, numero])
+  @@index([fechaEmision])
+}
+
+// ---------------------------------------------------------------------------
+// Caja
+// ---------------------------------------------------------------------------
+
+model SesionCaja {
+  id     String @id @default(cuid())
+  numero Int    @unique
+
+  abiertaPorId     String
+  abiertaPor       Usuario  @relation("CajaAbiertaPor", fields: [abiertaPorId], references: [id])
+  abiertaEn        DateTime @default(now())
+  saldoInicialCent Int      @default(0)
+
+  cerradaPorId          String?
+  cerradaPor            Usuario?  @relation("CajaCerradaPor", fields: [cerradaPorId], references: [id], onDelete: SetNull)
+  cerradaEn             DateTime?
+  saldoFinalContadoCent Int?
+  saldoFinalTeoricoCent Int?
+  descuadreCent         Int?
+  desgloseArqueoJson    String?
+  resumenJson           String?
+
+  notas  String?
+  estado String @default("ABIERTA") // ABIERTA | CERRADA
+
+  movimientos MovimientoCaja[]
+  pagos       Pago[]
+  pedidos     Pedido[]
+
+  @@index([estado])
+}
+
+model MovimientoCaja {
+  id           String     @id @default(cuid())
+  sesionCajaId String
+  sesionCaja   SesionCaja @relation(fields: [sesionCajaId], references: [id], onDelete: Cascade)
+
+  tipo        String // APERTURA | VENTA | ENTRADA | SALIDA | RETIRADA | GASTO | PROPINA | CIERRE
+  importeCent Int
+  motivo      String
+  usuarioId   String?
+  usuario     Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+  creadoEn    DateTime @default(now())
+
+  @@index([sesionCajaId])
+}
